@@ -36,19 +36,14 @@ url <- "http://sejm.gov.pl/Sejm8.nsf/biuletyn.xsp?skrnr=ZDR-24"
 stenogram_tresc <- function(x=url){
   test <<- readLines(x)
   Encoding(test) <<- "UTF-8"
-  poczatek <<- grep("Zapis przebiegu posiedzenia komisji",test)[length(grep("Zapis przebiegu posiedzenia komisji",test))]
-  koniec <<- grep("amykam posiedzenie Komisji.",test)
-  test <<- test[poczatek:koniec]
-  test <<- subset(test,grepl("<p>.*?</p>",test)) # Wydobądźmy wszystkie akapity 
-  test <<- gsub("<.*?>"," ",test) # Usuńmy kodowanie html
+  poczatek <- grep("Zapis przebiegu posiedzenia komisji",test)[length(grep("Zapis przebiegu posiedzenia komisji",test))]
+  koniec <- grep("amykam posiedzenie Komisji.",test)
+  test <- test[poczatek:koniec]
+  test <- subset(test,grepl("<p>.*?</p>",test)) # Wydobądźmy wszystkie akapity 
+  test <- gsub("<.*?>"," ",test) # Usuńmy kodowanie html
   test <<- gsub("  "," ",test) # Usuńmy podwójne spacje
 }
 stenogram_tresc()
-
-stenogram <- "W posiedzeniu udział wzięli: Konstanty Radziwiłł minister zdrowia i Jarosław Pinkas sekretarz stanu w Ministerstwie Zdrowia ze współpracownikami, Andrzej Jacyna p.o. prezesa Narodowego Funduszu Zdrowia ze współpracownikiem, Krystyna Kozłowska rzecznik praw pacjenta ze współpracownikiem, Bartosz Sowiera dyrektor gabinetu Rzecznika w Biurze Rzecznika Praw Dziecka, Maciej Szustowicz wicedyrektor Departamentu Zdrowia Najwyższej Izby Kontroli, Dorota Budarz członek Rady Krajowej, Marcelina Zawisza członek Zarządu Krajowego i Marta Nowak rzecznik prasowy Partii Razem, Zdzisław Bujas wiceprzewodniczący Zarządu Krajowego Ogólnopolskiego Związku Zawodowego Pielęgniarek i Położnych, Wanda Fidelus-Ninkiewicz dyrektor Biura Naczelnej Izby Lekarskiej ze współpracownikiem, Jan Kowalczuk członek Zarządu Ogólnopolskiego Związku Zawodowego Lekarzy wraz ze współpracownikami, Zofia Małas prezes Naczelnej Rady Pielęgniarek i Położnych wraz ze współpracownikami Elżbieta Piotrowska-Rutkowska prezes Naczelnej Rady Aptekarskiej oraz Mateusz Moksik asystent przewodniczącego Komisji
-W posiedzeniu udział wzięli pracownicy Kancelarii Sejmu: Longina Grzegrzułka, Małgorzata Siedlecka-Nowak, Monika Żołnierowicz-Kasprzyk – z sekretariatu Komisji w Biurze Komisji Sejmowych.
-Komisja Zdrowia, obradująca pod przewodnictwem posła Bartosza Arłukowicza (PO), przewodniczącego Komisji oraz posła Tomasza Latosa (PiS), zastępcy przewodniczącego Komisji, rozpatrzyła:
-– informację na temat aktualnej sytuacji w Szpitalu Instytucie „Pomnik – Centrum Zdrowia Dziecka”."
 
 # 3.
 # Każdy stenogram posiada akapity "W posiedzeniu udział [...]" i "- sprawa zwołania posiedzenia", wydobądźmy je - subset z grepl
@@ -123,3 +118,36 @@ urln <- sapply(strsplit(url,".*="), as.character)[-1]
 urlnn <- sapply(strsplit(urln,"-"), as.character)
 komisja <- urlnn[1]
 nr_posiedzenia <- urlnn[2]
+
+
+# Funkcja łączaca wszystko w jedno
+
+url <- "http://sejm.gov.pl/Sejm8.nsf/biuletyn.xsp?skrnr=ZDR-24"
+informacje <- function(x=url){
+  urlp <- sapply(strsplit(x,"/"), as.character)
+  sejm <- subset(urlp,grepl(".nsf",urlp))
+  if(grepl("8",sejm)){
+    nr_kadencji <<- 8
+  }else{
+    nr_kadnecji <<- 7
+  }
+  urln <- sapply(strsplit(x,".*="), as.character)[-1]
+  urlnn <- sapply(strsplit(urln,"-"), as.character)
+  komisja <<- urlnn[1]
+  nr_posiedzenia <<- urlnn[2]
+  stenogram_tresc(x)
+  udzial <- subset(test,grepl("W posiedzeniu udział",test))
+  slowa <- sapply(strsplit(udzial," "), as.character)
+  pomocniczy <- ""
+  imiona <- c("Maciej","Mateusz","Jan","Wanda")
+  for(i in 1:length(slowa)){
+    for(j in 1:length(slowa[[i]])){
+      if(slowa[[i]][j] %in% imiona){
+        pomocniczy <- paste(pomocniczy," ",slowa[[i]][j],slowa[[i]][j+1])
+      }
+    }
+  }
+  obecni <<- sapply(strsplit(pomocniczy,"   "), as.character)[-1]
+  sprawa <<- subset(test,grepl(" – ",test))[1]
+  informacjew <<- c(nr_kadencji,komisja,nr_posiedzenia,obecni,sprawa)
+}
