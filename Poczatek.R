@@ -32,14 +32,18 @@ library(ggplot2)
 # 2.
 # Potrzebny kod do wczytywania stenogramów! - test
 
-test <- readLines("http://sejm.gov.pl/Sejm8.nsf/biuletyn.xsp?skrnr=ZDR-24")
-Encoding(test) <- "UTF-8"
-poczatek <- grep("Zapis przebiegu posiedzenia komisji",test)[length(grep("Zapis przebiegu posiedzenia komisji",test))]
-koniec <- grep("amykam posiedzenie Komisji.",test)
-test <- test[poczatek:koniec]
-test <- subset(test,grepl("<p>.*?</p>",test)) # Wydobądźmy wszystkie akapity 
-test <- gsub("<.*?>"," ",test) # Usuńmy kodowanie html
-test <- gsub("  "," ",test) # Usuńmy podwójne spacje
+url <- "http://sejm.gov.pl/Sejm8.nsf/biuletyn.xsp?skrnr=ZDR-24"
+stenogram_tresc <- function(x=url){
+  test <<- readLines(x)
+  Encoding(test) <<- "UTF-8"
+  poczatek <<- grep("Zapis przebiegu posiedzenia komisji",test)[length(grep("Zapis przebiegu posiedzenia komisji",test))]
+  koniec <<- grep("amykam posiedzenie Komisji.",test)
+  test <<- test[poczatek:koniec]
+  test <<- subset(test,grepl("<p>.*?</p>",test)) # Wydobądźmy wszystkie akapity 
+  test <<- gsub("<.*?>"," ",test) # Usuńmy kodowanie html
+  test <<- gsub("  "," ",test) # Usuńmy podwójne spacje
+}
+stenogram_tresc()
 
 stenogram <- "W posiedzeniu udział wzięli: Konstanty Radziwiłł minister zdrowia i Jarosław Pinkas sekretarz stanu w Ministerstwie Zdrowia ze współpracownikami, Andrzej Jacyna p.o. prezesa Narodowego Funduszu Zdrowia ze współpracownikiem, Krystyna Kozłowska rzecznik praw pacjenta ze współpracownikiem, Bartosz Sowiera dyrektor gabinetu Rzecznika w Biurze Rzecznika Praw Dziecka, Maciej Szustowicz wicedyrektor Departamentu Zdrowia Najwyższej Izby Kontroli, Dorota Budarz członek Rady Krajowej, Marcelina Zawisza członek Zarządu Krajowego i Marta Nowak rzecznik prasowy Partii Razem, Zdzisław Bujas wiceprzewodniczący Zarządu Krajowego Ogólnopolskiego Związku Zawodowego Pielęgniarek i Położnych, Wanda Fidelus-Ninkiewicz dyrektor Biura Naczelnej Izby Lekarskiej ze współpracownikiem, Jan Kowalczuk członek Zarządu Ogólnopolskiego Związku Zawodowego Lekarzy wraz ze współpracownikami, Zofia Małas prezes Naczelnej Rady Pielęgniarek i Położnych wraz ze współpracownikami Elżbieta Piotrowska-Rutkowska prezes Naczelnej Rady Aptekarskiej oraz Mateusz Moksik asystent przewodniczącego Komisji
 W posiedzeniu udział wzięli pracownicy Kancelarii Sejmu: Longina Grzegrzułka, Małgorzata Siedlecka-Nowak, Monika Żołnierowicz-Kasprzyk – z sekretariatu Komisji w Biurze Komisji Sejmowych.
