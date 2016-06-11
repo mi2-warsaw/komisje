@@ -2,18 +2,18 @@
 
 # 1. Wczytanie potrzebnych pakietów
 # 2. Wczytanie stenogramu
-# 3. Podzielenie na akapity
-# 4. Wyodrębnienie konkretnych akapitów
+# 3. Wyodrębnienie konkretnych akapitów
 
-## 4.1. Akapity, które zawierają uczestników posiedzenia
+## 3.1. Akapity, które zawierają uczestników posiedzenia
 ### a) Podzielenie akapitów na słowa
 ### b) Wyodrębnienie z nich imion i nazwisk
 
-## 4.2. Akapit, który zawiera powód zwołania komisji
+## 3.2. Akapit, który zawiera powód zwołania komisji
 ### a) Wydobycie powodu zwołania obrad
 
-# 5. Wydobycie numeru kadencji sejmu
-# 6. Wydobycie numeru posiedzenia komisji
+# 4. Wydobycie numeru kadencji sejmu
+# 5. Wydobycie numeru posiedzenia komisji
+# 6. Wydobycie nazwy Komisji
 
 # .
 # .
@@ -25,14 +25,21 @@
 # Przykład:
 
 # 1.
-# Wczytajmy pakiety, które pomogą nam zdoyć środek html, jak również inne, które pomogą nam w późniejszych analizach
+# Wczytajmy pakiety, które pomogą nam w późniejszych analizach
 
-library(RCurl)
-library(XML)
 library(ggplot2)
 
 # 2.
-# Potrzebny kod do wczytywania stenogramów! - skorzystanie z RCurl i XML
+# Potrzebny kod do wczytywania stenogramów! - test
+
+test <- readLines("http://sejm.gov.pl/Sejm8.nsf/biuletyn.xsp?skrnr=ZDR-24")
+Encoding(test) <- "UTF-8"
+poczatek <- grep("Zapis przebiegu posiedzenia komisji",test)[length(grep("Zapis przebiegu posiedzenia komisji",test))]
+koniec <- grep("amykam posiedzenie Komisji.",test)
+test <- test[poczatek:koniec]
+test <- subset(test,grepl("<p>.*?</p>",test)) # Wydobądźmy wszystkie akapity 
+test <- gsub("<.*?>"," ",test) # Usuńmy kodowanie html
+test <- gsub("  "," ",test) # Usuńmy podwójne spacje
 
 stenogram <- "W posiedzeniu udział wzięli: Konstanty Radziwiłł minister zdrowia i Jarosław Pinkas sekretarz stanu w Ministerstwie Zdrowia ze współpracownikami, Andrzej Jacyna p.o. prezesa Narodowego Funduszu Zdrowia ze współpracownikiem, Krystyna Kozłowska rzecznik praw pacjenta ze współpracownikiem, Bartosz Sowiera dyrektor gabinetu Rzecznika w Biurze Rzecznika Praw Dziecka, Maciej Szustowicz wicedyrektor Departamentu Zdrowia Najwyższej Izby Kontroli, Dorota Budarz członek Rady Krajowej, Marcelina Zawisza członek Zarządu Krajowego i Marta Nowak rzecznik prasowy Partii Razem, Zdzisław Bujas wiceprzewodniczący Zarządu Krajowego Ogólnopolskiego Związku Zawodowego Pielęgniarek i Położnych, Wanda Fidelus-Ninkiewicz dyrektor Biura Naczelnej Izby Lekarskiej ze współpracownikiem, Jan Kowalczuk członek Zarządu Ogólnopolskiego Związku Zawodowego Lekarzy wraz ze współpracownikami, Zofia Małas prezes Naczelnej Rady Pielęgniarek i Położnych wraz ze współpracownikami Elżbieta Piotrowska-Rutkowska prezes Naczelnej Rady Aptekarskiej oraz Mateusz Moksik asystent przewodniczącego Komisji
 W posiedzeniu udział wzięli pracownicy Kancelarii Sejmu: Longina Grzegrzułka, Małgorzata Siedlecka-Nowak, Monika Żołnierowicz-Kasprzyk – z sekretariatu Komisji w Biurze Komisji Sejmowych.
@@ -40,18 +47,11 @@ Komisja Zdrowia, obradująca pod przewodnictwem posła Bartosza Arłukowicza (PO
 – informację na temat aktualnej sytuacji w Szpitalu Instytucie „Pomnik – Centrum Zdrowia Dziecka”."
 
 # 3.
-# Nowe linie(entery) R traktuje jako napis "\n", więc pozbędźmy się ich - strsplit z sapply
-# Od razu da nam to podzielenie tekstu na akapity
+# Każdy stenogram posiada akapity "W posiedzeniu udział [...]" i "- sprawa zwołania posiedzenia", wydobądźmy je - subset z grepl
 
-akapity <- sapply(strsplit(stenogram,"\n"), as.character)
+## 3.1.
 
-# 4.
-# Każdy stenogram posiada akapit/y "W posiedzeniu udział [...]" , wybierzmy więc je - subset z grepl
-# - || - akapit i jemu następny np. " Komisja Zdrowia [...], rozpatrzyła: \n – informację na temat aktualnej sytuacji w Szpitalu Instytucie „Pomnik – Centrum Zdrowia Dziecka” "
-
-## 4.1.
-
-udzial <- subset(akapity,grepl("W posiedzeniu udział",akapity))
+udzial <- subset(test,grepl("W posiedzeniu udział",test))
 
 ### a)
 # Podzielmy dane akapity na słowa - sapply z strsplit 
@@ -75,12 +75,12 @@ for(i in 1:length(slowa)){
 
 obecni <- sapply(strsplit(pomocniczy,"   "), as.character)[-1]
 
-## 4.2.
+## 3.2.
 ### a)
 
-sprawa <- akapity[grep("rozpatrzyła:",akapity)+1]
+sprawa <- subset(test,grepl(" – ",test))[1]
 
-# 5.
+# 4.
 # Spójrzmy na dwa linki z różnych kadencji
 # http://sejm.gov.pl/Sejm8.nsf/biuletyn.xsp?skrnr=ZDR-24
 # http://www.sejm.gov.pl/sejm7.nsf/PosKomZrealizowane.xsp?komisja=ZDR
@@ -88,7 +88,7 @@ sprawa <- akapity[grep("rozpatrzyła:",akapity)+1]
 
 url <- "http://sejm.gov.pl/Sejm8.nsf/biuletyn.xsp?skrnr=ZDR-24"
 urlp <- sapply(strsplit(url,"/"), as.character)
-sejm <- subset(urlp,grepl(".nsf",urlprzerobiony))
+sejm <- subset(urlp,grepl(".nsf",urlp))
 
 if(grepl("8",sejm)){
   nr_kadencji <- 8
@@ -96,10 +96,26 @@ if(grepl("8",sejm)){
   nr_kadnecji <- 7
 }
 
-# 6.
+# 5.
 # Spójrzmy jeszcze raz na przykładowy link http://sejm.gov.pl/Sejm8.nsf/biuletyn.xsp?skrnr=ZDR-24
 # Pod koniec po "-" widnieje numer posiedzenia komisji, podzielmy więc odpowiednio url, żeby to wydobyć
 
 url <- "http://sejm.gov.pl/Sejm8.nsf/biuletyn.xsp?skrnr=ZDR-24"
 urln <- sapply(strsplit(url,"-"), as.character)
 nr_posiedzenia <- as.numeric(urln[length(urln)]) # Jako, że numer występuje na końcu
+
+# 6.
+# Patrząc na linki http://sejm.gov.pl/Sejm8.nsf/biuletyn.xsp?skrnr=ZDR-24 i http://sejm.gov.pl/Sejm8.nsf/biuletyn.xsp?skrnr=PET-22
+# widzimy, że każda komisja ma swój własny skrót, podzielmy odpowiednio link - sapply z strsplit
+
+url <- "http://sejm.gov.pl/Sejm8.nsf/biuletyn.xsp?skrnr=ZDR-24"
+urln <- sapply(strsplit(url,".*="), as.character)[-1] # Podzielmy string tak, żeby podzielnikiem było to co stoi przed skrótem
+komisja <- sapply(strsplit(urln,"-.*"), as.character)[-2] # - || - to co stoi po skrócie
+
+## Notka ##
+# Punkty 5. i 6. da się zrobić jednocześnie
+url <- "http://sejm.gov.pl/Sejm8.nsf/biuletyn.xsp?skrnr=ZDR-24"
+urln <- sapply(strsplit(url,".*="), as.character)[-1]
+urlnn <- sapply(strsplit(urln,"-"), as.character)
+komisja <- urlnn[1]
+nr_posiedzenia <- urlnn[2]
