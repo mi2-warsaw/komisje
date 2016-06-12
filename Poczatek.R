@@ -151,3 +151,20 @@ informacje <- function(x=url){
   sprawa <<- subset(test,grepl(" – ",test))[1]
   informacjew <<- c(nr_kadencji,komisja,nr_posiedzenia,obecni,sprawa)
 }
+
+# Nowy sposób na wydobycie osób:
+
+udzial <- subset(test,grepl("W posiedzeniu udział",test))
+osoby <- function(){
+pogrubione <- sapply(strsplit(udzial,"</font><font face=\"Arial\"><b>"),as.character)
+pogrubione <- unlist(pogrubione)                
+pogrubione <- pogrubione[-c(grep("W posiedzeniu udział",pogrubione))]
+pogrubione <- sapply(strsplit(pogrubione," </b></font><font face=\"Arial\">"),as.character)
+pogrubione <- unlist(pogrubione)
+pogrubione <- sapply(strsplit(pogrubione,"</b></font><font face=\"Arial\">"),as.character)
+pogrubione <- unlist(pogrubione)
+osoby <<- pogrubione[seq(1,length(pogrubione),2)]
+pochodzenie <<- pogrubione[seq(2,length(pogrubione),2)]
+}
+
+# Funkcja wyświetla bardzo dobrze osoby, lecz bardzo ciężko z afiliacjami
