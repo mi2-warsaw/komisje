@@ -163,8 +163,9 @@ pogrubione <- sapply(strsplit(pogrubione," </b></font><font face=\"Arial\">"),as
 pogrubione <- unlist(pogrubione)
 pogrubione <- sapply(strsplit(pogrubione,"</b></font><font face=\"Arial\">"),as.character)
 pogrubione <- unlist(pogrubione)
-osoby <<- pogrubione[seq(1,length(pogrubione),2)]
-pochodzenie <<- pogrubione[seq(2,length(pogrubione),2)]
+osoby <- pogrubione[seq(1,length(pogrubione),2)]
+pochodzenie <- pogrubione[seq(2,length(pogrubione),2)]
+ramka <<- data.frame(osoby,pochodzenie)
 }
 
 # Funkcja wyświetla bardzo dobrze osoby, lecz bardzo ciężko z afiliacjami
