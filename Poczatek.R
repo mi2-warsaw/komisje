@@ -40,35 +40,23 @@ stenogram_tresc <- function(x=url){
   koniec <- grep("amykam posiedzenie Komisji.",test)
   test <- test[poczatek:koniec]
   test <- subset(test,grepl("<p>.*?</p>",test)) # Wydobądźmy wszystkie akapity 
+  udzial <<- subset(test,grepl("W posiedzeniu udział",test))
   test <- gsub("<.*?>"," ",test) # Usuńmy kodowanie html
   test <<- gsub("  "," ",test) # Usuńmy podwójne spacje
 }
 stenogram_tresc()
 
 # 3.
-# Każdy stenogram posiada akapity "W posiedzeniu udział [...]" i "- sprawa zwołania posiedzenia", wydobądźmy je - subset z grepl
+# Funkcja do wydobywania listy osób
 
-## 3.1.
-
-udzial <- subset(test,grepl("W posiedzeniu udział",test))
-
-### a)
-# Podzielmy dane akapity na słowa - sapply z strsplit 
-
-slowa <- sapply(strsplit(udzial," "), as.character)
-
-### b)
-# Każde imię i nazwisko jest pogrubione, jak również jest po nim afiliacja, podzielmy więc odpowiednio konkretne akapity
-
-udzial <- subset(test,grepl("W posiedzeniu udział",test))
 lista_osob <- function(){
-pogrubione <- sapply(strsplit(udzial,"</font><font face=\"Arial\"><b>"),as.character) # Dzielimy pogrubienia od lewej
-pogrubione <- unlist(pogrubione)  # Z powodu dwóch tekstów robimy wektor              
-pogrubione <- pogrubione[-c(grep("W posiedzeniu udział",pogrubione))] # Usuwamy elementy wektora bez obserwacji
-pogrubione <- sapply(strsplit(pogrubione,"</b></font><font face=\"Arial\">"),as.character) # Dzielimy pogrubienia od prawej strony
-pogrubione <- unlist(pogrubione) # Wszystkie modyfikacje dają nam wektor, którego nieparzysty element to osoba, a parzysty jego afiliacja
-osoby <<- pogrubione[seq(1,length(pogrubione),2)] 
-afiliacje <<- pogrubione[seq(2,length(pogrubione),2)]
+  pogrubione <- sapply(strsplit(udzial,"</font><font face=\"Arial\"><b>"),as.character) # Dzielimy pogrubienia od lewej
+  pogrubione <- unlist(pogrubione)  # Z powodu dwóch tekstów robimy wektor              
+  pogrubione <- pogrubione[-c(grep("W posiedzeniu udział",pogrubione))] # Usuwamy elementy wektora bez obserwacji
+  pogrubione <- sapply(strsplit(pogrubione,"</b></font><font face=\"Arial\">"),as.character) # Dzielimy pogrubienia od prawej strony
+  pogrubione <- unlist(pogrubione) # Wszystkie modyfikacje dają nam wektor, którego nieparzysty element to osoba, a parzysty jego afiliacja
+  osoby <<- pogrubione[seq(1,length(pogrubione),2)] 
+  afiliacje <<- pogrubione[seq(2,length(pogrubione),2)]
 }
 lista_osob()
 
@@ -80,7 +68,7 @@ lista_osob()
 
 nr_akapitow <- grep(" – ",test)
 nr_akapitu <- grep("W posiedzeniu udział",test)[1]
-sprawy <- nr_akapitow[nr_akapitow < nr_akapitu]
+sprawy <- test[seq(1,sum(nr_akapitow < nr_akapitu),1)]
 
 # 4.
 # Spójrzmy na dwa linki z różnych kadencji
@@ -134,18 +122,19 @@ stenogram_tresc <- function(x=url){
   koniec <- grep("amykam posiedzenie Komisji.",test)
   test <- test[poczatek:koniec]
   test <- subset(test,grepl("<p>.*?</p>",test)) # Wydobądźmy wszystkie akapity 
+  udzial <<- subset(test,grepl("W posiedzeniu udział",test))
   test <- gsub("<.*?>"," ",test) # Usuńmy kodowanie html
   test <<- gsub("  "," ",test) # Usuńmy podwójne spacje
 }
 # Wydobycie listy osób i ich przynależności
 lista_osob <- function(){
-pogrubione <- sapply(strsplit(udzial,"</font><font face=\"Arial\"><b>"),as.character) # Dzielimy pogrubienia od lewej
-pogrubione <- unlist(pogrubione)  # Z powodu możliwości dwóch lub więcej tekstów robimy wektor              
-pogrubione <- pogrubione[-c(grep("W posiedzeniu udział",pogrubione))] # Usuwamy elementy wektora bez obserwacji
-pogrubione <- sapply(strsplit(pogrubione,"</b></font><font face=\"Arial\">"),as.character) # Dzielimy pogrubienia od prawej strony
-pogrubione <- unlist(pogrubione) # Wszystkie modyfikacje dają nam wektor, którego nieparzysty element to osoba, a parzysty jego afiliacja
-osoby <<- pogrubione[seq(1,length(pogrubione),2)] 
-afiliacje <<- pogrubione[seq(2,length(pogrubione),2)]
+  pogrubione <- sapply(strsplit(udzial,"</font><font face=\"Arial\"><b>"),as.character) # Dzielimy pogrubienia od lewej
+  pogrubione <- unlist(pogrubione)  # Z powodu możliwości dwóch lub więcej tekstów robimy wektor              
+  pogrubione <- pogrubione[-c(grep("W posiedzeniu udział",pogrubione))] # Usuwamy elementy wektora bez obserwacji
+  pogrubione <- sapply(strsplit(pogrubione,"</b></font><font face=\"Arial\">"),as.character) # Dzielimy pogrubienia od prawej strony
+  pogrubione <- unlist(pogrubione) # Wszystkie modyfikacje dają nam wektor, którego nieparzysty element to osoba, a parzysty jego afiliacja
+  osoby <<- pogrubione[seq(1,length(pogrubione),2)] 
+  afiliacje <<- pogrubione[seq(2,length(pogrubione),2)]
 }
 # Wydobycie wszystkich informacji
 informacje <- function(x=url){
@@ -162,12 +151,11 @@ informacje <- function(x=url){
   nr_posiedzenia <<- urlnn[2]
   stenogram_tresc(x)
   udzial <- subset(test,grepl("W posiedzeniu udział",test))
-  slowa <- sapply(strsplit(udzial," "), as.character)
   lista_osob()
   nr_akapitow <- grep(" – ",test)
   nr_akapitu <- grep("W posiedzeniu udział",test)[1]
-  sprawy <<- nr_akapitow[nr_akapitow < nr_akapitu]
-  informacjew <<- c(nr_kadencji,komisja,nr_posiedzenia,sprawy,osoby,afiliacje,)
+  sprawy <<- test[seq(1,sum(nr_akapitow < nr_akapitu),1)]
+  informacjew <<- c(nr_kadencji,komisja,nr_posiedzenia,sprawy,osoby,afiliacje)
 }
 informacje()
 
