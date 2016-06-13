@@ -30,7 +30,7 @@
 library(ggplot2)
 
 # 2.
-# Potrzebny kod do wczytywania stenogramów! - test
+# Funkcja do wczytywania stenogramów
 
 url <- "http://sejm.gov.pl/Sejm8.nsf/biuletyn.xsp?skrnr=ZDR-24"
 stenogram_tresc <- function(x=url){
@@ -58,26 +58,29 @@ udzial <- subset(test,grepl("W posiedzeniu udział",test))
 slowa <- sapply(strsplit(udzial," "), as.character)
 
 ### b)
-# Stwórzmy wektor imion i przyłóżmy go, żeby wydobyć imiona.
-# Jako że po imionach występuje nazwisko dodajmy również kolejny wyraz - Pętla przeszukująca słowa w akapitach
+# Każde imię i nazwisko jest pogrubione, jak również jest po nim afiliacja, podzielmy więc odpowiednio konkretne akapity
 
-
-pomocniczy <- ""
-imiona <- c("Maciej","Mateusz","Jan","Wanda")
-for(i in 1:length(slowa)){
-  for(j in 1:length(slowa[[i]])){
-    if(slowa[[i]][j] %in% imiona){
-      pomocniczy <- paste(pomocniczy," ",slowa[[i]][j],slowa[[i]][j+1])
-    }
-  }
+udzial <- subset(test,grepl("W posiedzeniu udział",test))
+lista_osob <- function(){
+pogrubione <- sapply(strsplit(udzial,"</font><font face=\"Arial\"><b>"),as.character) # Dzielimy pogrubienia od lewej
+pogrubione <- unlist(pogrubione)  # Z powodu dwóch tekstów robimy wektor              
+pogrubione <- pogrubione[-c(grep("W posiedzeniu udział",pogrubione))] # Usuwamy elementy wektora bez obserwacji
+pogrubione <- sapply(strsplit(pogrubione,"</b></font><font face=\"Arial\">"),as.character) # Dzielimy pogrubienia od prawej strony
+pogrubione <- unlist(pogrubione) # Wszystkie modyfikacje dają nam wektor, którego nieparzysty element to osoba, a parzysty jego afiliacja
+osoby <<- pogrubione[seq(1,length(pogrubione),2)] 
+afiliacje <<- pogrubione[seq(2,length(pogrubione),2)]
 }
-
-obecni <- sapply(strsplit(pomocniczy,"   "), as.character)[-1]
+lista_osob()
 
 ## 3.2.
 ### a)
+# Pierwsze akapity poprzedzone myślnikiem, pokazują nam sprawy zwołania komisji
+# Akapit następny po powodach zorganizowania spotkania, to akapit mówiący kto brał udział w posiedzeniu.
+# Weźmy więc te akapity, które są przed nim
 
-sprawa <- subset(test,grepl(" – ",test))[1]
+nr_akapitow <- grep(" – ",test)
+nr_akapitu <- grep("W posiedzeniu udział",test)[1]
+sprawy <- nr_akapitow[nr_akapitow < nr_akapitu]
 
 # 4.
 # Spójrzmy na dwa linki z różnych kadencji
@@ -119,10 +122,32 @@ urlnn <- sapply(strsplit(urln,"-"), as.character)
 komisja <- urlnn[1]
 nr_posiedzenia <- urlnn[2]
 
+# ====================================================Podsumowanie========================================================== #
 
-# Funkcja łączaca wszystko w jedno
-
+# Dane do wczytania
 url <- "http://sejm.gov.pl/Sejm8.nsf/biuletyn.xsp?skrnr=ZDR-24"
+# Wydobycie interesującej treści
+stenogram_tresc <- function(x=url){
+  test <<- readLines(x)
+  Encoding(test) <<- "UTF-8"
+  poczatek <- grep("Zapis przebiegu posiedzenia komisji",test)[length(grep("Zapis przebiegu posiedzenia komisji",test))]
+  koniec <- grep("amykam posiedzenie Komisji.",test)
+  test <- test[poczatek:koniec]
+  test <- subset(test,grepl("<p>.*?</p>",test)) # Wydobądźmy wszystkie akapity 
+  test <- gsub("<.*?>"," ",test) # Usuńmy kodowanie html
+  test <<- gsub("  "," ",test) # Usuńmy podwójne spacje
+}
+# Wydobycie listy osób i ich przynależności
+lista_osob <- function(){
+pogrubione <- sapply(strsplit(udzial,"</font><font face=\"Arial\"><b>"),as.character) # Dzielimy pogrubienia od lewej
+pogrubione <- unlist(pogrubione)  # Z powodu możliwości dwóch lub więcej tekstów robimy wektor              
+pogrubione <- pogrubione[-c(grep("W posiedzeniu udział",pogrubione))] # Usuwamy elementy wektora bez obserwacji
+pogrubione <- sapply(strsplit(pogrubione,"</b></font><font face=\"Arial\">"),as.character) # Dzielimy pogrubienia od prawej strony
+pogrubione <- unlist(pogrubione) # Wszystkie modyfikacje dają nam wektor, którego nieparzysty element to osoba, a parzysty jego afiliacja
+osoby <<- pogrubione[seq(1,length(pogrubione),2)] 
+afiliacje <<- pogrubione[seq(2,length(pogrubione),2)]
+}
+# Wydobycie wszystkich informacji
 informacje <- function(x=url){
   urlp <- sapply(strsplit(x,"/"), as.character)
   sejm <- subset(urlp,grepl(".nsf",urlp))
@@ -132,40 +157,20 @@ informacje <- function(x=url){
     nr_kadnecji <<- 7
   }
   urln <- sapply(strsplit(x,".*="), as.character)[-1]
-  urlnn <- sapply(strsplit(urln,"-"), as.character)
+  urlnn <- sapply(strsplit(urln,"-"), as.character) # Dzieląc tak tekst dostajemy dwu elementowy wektor, pierwszym stringiem jest skrót komisji, drugim jest jej numer
   komisja <<- urlnn[1]
   nr_posiedzenia <<- urlnn[2]
   stenogram_tresc(x)
   udzial <- subset(test,grepl("W posiedzeniu udział",test))
   slowa <- sapply(strsplit(udzial," "), as.character)
-  pomocniczy <- ""
-  imiona <- c("Maciej","Mateusz","Jan","Wanda")
-  for(i in 1:length(slowa)){
-    for(j in 1:length(slowa[[i]])){
-      if(slowa[[i]][j] %in% imiona){
-        pomocniczy <- paste(pomocniczy," ",slowa[[i]][j],slowa[[i]][j+1])
-      }
-    }
-  }
-  obecni <<- sapply(strsplit(pomocniczy,"   "), as.character)[-1]
-  sprawa <<- subset(test,grepl(" – ",test))[1]
-  informacjew <<- c(nr_kadencji,komisja,nr_posiedzenia,obecni,sprawa)
+  lista_osob()
+  nr_akapitow <- grep(" – ",test)
+  nr_akapitu <- grep("W posiedzeniu udział",test)[1]
+  sprawy <<- nr_akapitow[nr_akapitow < nr_akapitu]
+  informacjew <<- c(nr_kadencji,komisja,nr_posiedzenia,sprawy,osoby,afiliacje,)
 }
+informacje()
 
-# Nowy sposób na wydobycie osób:
+# Uwaga - Afiliacje do poprawy
 
-udzial <- subset(test,grepl("W posiedzeniu udział",test))
-osoby <- function(){
-pogrubione <- sapply(strsplit(udzial,"</font><font face=\"Arial\"><b>"),as.character)
-pogrubione <- unlist(pogrubione)                
-pogrubione <- pogrubione[-c(grep("W posiedzeniu udział",pogrubione))]
-pogrubione <- sapply(strsplit(pogrubione," </b></font><font face=\"Arial\">"),as.character)
-pogrubione <- unlist(pogrubione)
-pogrubione <- sapply(strsplit(pogrubione,"</b></font><font face=\"Arial\">"),as.character)
-pogrubione <- unlist(pogrubione)
-osoby <- pogrubione[seq(1,length(pogrubione),2)]
-pochodzenie <- pogrubione[seq(2,length(pogrubione),2)]
-ramka <<- data.frame(osoby,pochodzenie)
-}
-
-# Funkcja wyświetla bardzo dobrze osoby, lecz bardzo ciężko z afiliacjami
+# ====================================================Podsumowanie========================================================== #
