@@ -28,6 +28,7 @@
 # Wczytajmy pakiety, które pomogą nam w późniejszych analizach
 
 library(ggplot2)
+library(shiny)
 
 # 2.
 # Funkcja do wczytywania stenogramów
@@ -44,7 +45,6 @@ stenogram_tresc <- function(x=url){
   test <- gsub("<.*?>"," ",test) # Usuńmy kodowanie html
   test <<- gsub("  "," ",test) # Usuńmy podwójne spacje
 }
-stenogram_tresc()
 
 # 3.
 # Funkcja do wydobywania listy osób
@@ -58,7 +58,6 @@ lista_osob <- function(){
   osoby <<- pogrubione[seq(1,length(pogrubione),2)] 
   afiliacje <<- pogrubione[seq(2,length(pogrubione),2)]
 }
-lista_osob()
 
 ## 3.2.
 ### a)
@@ -136,6 +135,18 @@ lista_osob <- function(){
   osoby <<- pogrubione[seq(1,length(pogrubione),2)] 
   afiliacje <<- pogrubione[seq(2,length(pogrubione),2)]
 }
+# Afiliacje są bardzo ciężkie do uzyskania poprawnie, Funkcja poprawiająca manualnie afiliacje
+afiliacje_poprawki <- function(){
+  afiliacje <<- gsub("<.*?>","",afiliacje)
+  afiliacje <<- gsub(",","", afiliacje)
+  for(i in 1:length(afiliacje)){
+    show(afiliacje[i])
+    log <- readline()
+    if(log == 1){
+      afiliacje[i] <<- readline()
+    }
+  }
+}
 # Wydobycie wszystkich informacji
 informacje <- function(x=url){
   urlp <- sapply(strsplit(x,"/"), as.character)
@@ -149,16 +160,14 @@ informacje <- function(x=url){
   urlnn <- sapply(strsplit(urln,"-"), as.character) # Dzieląc tak tekst dostajemy dwu elementowy wektor, pierwszym stringiem jest skrót komisji, drugim jest jej numer
   komisja <<- urlnn[1]
   nr_posiedzenia <<- urlnn[2]
-  stenogram_tresc(x)
-  udzial <- subset(test,grepl("W posiedzeniu udział",test))
+  stenogram_tresc()
   lista_osob()
+  afiliacje_poprawki()
   nr_akapitow <- grep(" – ",test)
   nr_akapitu <- grep("W posiedzeniu udział",test)[1]
   sprawy <<- test[seq(1,sum(nr_akapitow < nr_akapitu),1)]
   informacjew <<- c(nr_kadencji,komisja,nr_posiedzenia,sprawy,osoby,afiliacje)
 }
 informacje()
-
-# Uwaga - Afiliacje do poprawy
 
 # ====================================================Podsumowanie========================================================== #
