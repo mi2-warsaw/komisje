@@ -139,11 +139,28 @@ lista_osob <- function(){
 afiliacje_poprawki <- function(){
   afiliacje <<- gsub("<.*?>","",afiliacje)
   afiliacje <<- gsub(",","", afiliacje)
+  udzial <<- gsub("<.*?>","",udzial)
+  show(udzial[2])
   for(i in 1:length(afiliacje)){
     show(afiliacje[i])
-    log <- readline()
+    log <- readline("Czy chcesz poprawić afiliację?: ")
     if(log == 1){
-      afiliacje[i] <<- readline()
+      afiliacje[i] <<- readline("Podaj poprawkę: ")
+    }
+  }
+}
+# Trafiło się, że jedna osoba nie jest pogrubiona.. Funkcja, która dodaje osoby i ich afiliacje
+poprawki <- function(){
+  log <- readline("Czy chciałbyś dodać jeszcze jakąś osobę / jakieś osoby?: ")
+  if(log == 0){
+    break
+  }else{
+    ilosc <- readline("Ile osób?: ")
+    for(i in 1:ilosc){
+      poprawka <- readline("Podaj osobę i jej afiliację: ")
+      poprawka <- sapply(strsplit(poprawka,", "), as.character)
+      osoby[length(osoby)+1] <<- poprawka[1]
+      afiliacje[length(afiliacje)+1] <<- poprawka[2]
     }
   }
 }
@@ -163,11 +180,17 @@ informacje <- function(x=url){
   stenogram_tresc()
   lista_osob()
   afiliacje_poprawki()
+  poprawki()
   nr_akapitow <- grep(" – ",test)
   nr_akapitu <- grep("W posiedzeniu udział",test)[1]
   sprawy <<- test[seq(1,sum(nr_akapitow < nr_akapitu),1)]
-  informacjew <<- c(nr_kadencji,komisja,nr_posiedzenia,sprawy,osoby,afiliacje)
+  n <- length(osoby)
+  koniec <<- data.frame(Kadencja = rep(nr_kadencji,n),Komisja = rep(komisja,n),Spotkanie = rep(nr_posiedzenia,n), Sprawa = rep(sprawy,n), Osoby = osoby, Afiliacje_Osob = afiliacje)
 }
 informacje()
+
+# Funkcja robiąca CSV
+
+write.csv2(koniec,"Excel.csv")
 
 # ====================================================Podsumowanie========================================================== #
